@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="emeraldBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#004539"/>
+      <stop offset="100%" stop-color="#001D17"/>
+    </linearGradient>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F3DFC1"/>
+      <stop offset="50%" stop-color="#C6A36A"/>
+      <stop offset="100%" stop-color="#9E7C45"/>
+    </linearGradient>
+    <linearGradient id="goldRing" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C6A36A"/>
+      <stop offset="50%" stop-color="#FFF2D6"/>
+      <stop offset="100%" stop-color="#9E7C45"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Disc with Deep Gemstone Emerald Gradient -->
+  <circle cx="32" cy="32" r="30" fill="url(#emeraldBg)" stroke="url(#goldRing)" stroke-width="2"/>
+  
+  <!-- Subtle Inner Concentric Gold Ring -->
+  <circle cx="32" cy="32" r="26.5" fill="none" stroke="#C6A36A" stroke-width="0.75" stroke-dasharray="2 2" opacity="0.6"/>
+
+  <!-- Optical Precision Center Diamond / Literary Star -->
+  <polygon points="32,9 33.5,12 32,15 30.5,12" fill="url(#goldGradient)"/>
+  <polygon points="32,49 33.5,52 32,55 30.5,52" fill="url(#goldGradient)"/>
+
+  <!-- Iconic RSR Monogram Typographic Crest -->
+  <g fill="url(#goldGradient)" text-anchor="middle" dominant-baseline="central">
+    <text 
+      x="32" 
+      y="32.5" 
+      font-family="'Syne', 'Cinzel', 'Playfair Display', 'Georgia', serif" 
+      font-size="19" 
+      font-weight="800" 
+      letter-spacing="0.08em"
+    >RSR</text>
+  </g>
+</svg>
