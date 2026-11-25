@@ -193,6 +193,11 @@ function InteractivePrincipleCard({ val, onInspect }) {
 
 export default function LeadershipPage({ onNavigate }) {
   const [lightboxImage, setLightboxImage] = useState(null);
+  const [flippedCards, setFlippedCards] = useState({});
+
+  const toggleFlip = (id) => {
+    setFlippedCards((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Animation Refs
   const pageRef = useRef(null);
@@ -473,11 +478,13 @@ export default function LeadershipPage({ onNavigate }) {
       imageCaption: 'Dr. Rai demonstrating optical test and measurement instrumentation at an international telecom expo.',
       summary:
         'Nationwide distribution, integration, and lifecycle support of optical fiber test & measurement instrumentation, active/passive components, and 5G backhaul solutions.',
+      metrics: ['15,000+ Assignments', 'Tier-1 Telecom OEM', '25+ Yrs Industry Lead'],
       highlights: [
         'Strategic partners: Viavi Solutions (formerly JDSU), 3M, Spirent, and Fujikura',
         'OTDRs, optical spectrum analyzers, fusion splicers, and fiber power meters',
         'Turnkey FTTH/PON, Optical Ground Wire (OPGW), and RF testing for telcos',
       ],
+      tags: ['Viavi Solutions', '3M', 'Spirent', 'Fujikura', '5G Backhaul'],
       link: 'https://savitritelecom.com',
       linkText: 'Visit Savitri Telecom',
     },
@@ -491,11 +498,13 @@ export default function LeadershipPage({ onNavigate }) {
       imageCaption: 'STIL field teams executing high-precision underground fiber trenching and cable laying along national corridors.',
       summary:
         'Comprehensive infrastructure execution encompassing optical cable laying, trenching, HDD, and 24/7 Operations & Maintenance (O&M) across state corridors and railways.',
+      metrics: ['15,000+ Km Optic Fiber', 'Pan-India Fleet', '24/7 O&M Response'],
       highlights: [
         'Over 15,000+ completed fiber and telecom infrastructure assignments',
         'Pan-India presence with regional service stations in major states',
         'Long-haul optical backbone maintenance for public and private telcos',
       ],
+      tags: ['HDD Trenching', 'Telco Backbones', 'Railways Grids', 'O&M Centers'],
       link: 'https://savitri.group/business/',
       linkText: 'Explore STIL Operations',
     },
@@ -509,11 +518,13 @@ export default function LeadershipPage({ onNavigate }) {
       imageCaption: 'Optical test and measurement systems calibrated under rigorous NABL standards at Delhi-NCR labs.',
       summary:
         'State-of-the-art domestic manufacturing of optical assemblies and certified NABL-standard laboratories for precision calibration and instrument servicing.',
+      metrics: ['NABL Accredited', 'Domestic Testing Lab', 'Zero Foreign Delay'],
       highlights: [
         'Certified calibration for field OTDRs, power meters, and spectral testers',
         'Drastically reduces turnaround time compared to sending instruments overseas',
         'In-house fabrication of optical patch cords, pigtails, and distribution boxes',
       ],
+      tags: ['Field OTDRs', 'Spectrum Analyzers', 'Patch Cords', 'ISO Standards'],
       link: 'https://savitritelecom.com',
       linkText: 'View Calibration Capabilities',
     },
@@ -527,11 +538,13 @@ export default function LeadershipPage({ onNavigate }) {
       imageCaption: 'Dr. Rai deliberating on critical communications infrastructure, cyber defense, and national data networks.',
       summary:
         'Holistic enterprise digital architecture: Software-Defined Networking (SDN), secure private cloud deployments, vulnerability testing, and defense-grade communications.',
+      metrics: ['Defense Grade', 'SDN Architecture', 'Perimeter Auditing'],
       highlights: [
         'Network vulnerability assessments and digital perimeter hardening',
         'Data center infrastructure management and software-defined switching',
         'Secure communication links for enterprise and government agencies',
       ],
+      tags: ['SDN Switching', 'Private Cloud', 'Perimeter Defense', 'Govt Networks'],
       link: 'https://savitri.group/business/',
       linkText: 'Explore IT Infrastructure',
     },
@@ -545,11 +558,13 @@ export default function LeadershipPage({ onNavigate }) {
       imageCaption: 'Engineered material handling and mobile infrastructure supporting rapid enterprise deployment.',
       summary:
         'Engineered heavy-duty racking, industrial warehousing storage, and automated material handling systems supporting high-volume commercial logistics hubs.',
+      metrics: ['Automated Handling', 'High-Density Steel', '3PL Warehouses'],
       highlights: [
         'Customized industrial pallet racking, mezzanine systems, and cantilever racks',
         'High-density storage engineering for third-party logistics (3PL) and retail hubs',
         'Designed for rigorous structural safety and material efficiency',
       ],
+      tags: ['Pallet Racking', 'Mezzanines', 'Cantilever Racks', 'Supply Hubs'],
       link: 'https://savitri.group/business/',
       linkText: 'Explore Storage Solutions',
     },
@@ -563,11 +578,13 @@ export default function LeadershipPage({ onNavigate }) {
       imageCaption: 'Deeply anchored in rural regional empowerment, bridging technology with India’s agricultural heartlands.',
       summary:
         'Deeply anchored in regional farming communities; high-capacity modern paddy processing, parboiled rice milling, and food grain supply under trusted consumer labels.',
+      metrics: ['Modern Automation', 'Direct Farmer Network', 'Household Brand'],
       highlights: [
         'State-of-the-art automated paddy cleaning, parboiling, and milling facilities',
         'Direct procurement supporting local agricultural households in eastern India',
         'Produces trusted household staples including the Savitri Ashirvaad label',
       ],
+      tags: ['Ashirvaad Label', 'Parboiled Rice', 'Food Security', 'Farmer Direct'],
       link: 'https://savitri.group/business/',
       linkText: 'Explore Agro Division',
     },
@@ -726,7 +743,7 @@ export default function LeadershipPage({ onNavigate }) {
                     <img
                       src={rsrKeynote}
                       alt="Keynote Address"
-                      className="w-full h-full object-cover group-hover:scale-115 transition-transform duration-500 ease-out"
+                      className="w-full h-full object-cover object-top origin-top group-hover:scale-110 transition-transform duration-500 ease-out"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     <div className="absolute top-1.5 right-1.5 p-1 rounded bg-black/40 group-hover:bg-[#003D32] text-[#FAF7F0] transition-colors duration-300">
@@ -746,7 +763,7 @@ export default function LeadershipPage({ onNavigate }) {
                     <img
                       src={rsrPanel2}
                       alt="Executive Panel"
-                      className="w-full h-full object-cover group-hover:scale-115 transition-transform duration-500 ease-out"
+                      className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500 ease-out"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     <div className="absolute top-1.5 right-1.5 p-1 rounded bg-black/40 group-hover:bg-[#003D32] text-[#FAF7F0] transition-colors duration-300">
@@ -766,7 +783,7 @@ export default function LeadershipPage({ onNavigate }) {
                     <img
                       src={rsrExpo1}
                       alt="Technology Demonstration"
-                      className="w-full h-full object-cover group-hover:scale-115 transition-transform duration-500 ease-out"
+                      className="w-full h-full object-cover object-[75%_center] group-hover:scale-110 transition-transform duration-500 ease-out"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     <div className="absolute top-1.5 right-1.5 p-1 rounded bg-black/40 group-hover:bg-[#003D32] text-[#FAF7F0] transition-colors duration-300">
@@ -910,19 +927,24 @@ export default function LeadershipPage({ onNavigate }) {
               <span className="font-mono text-xs uppercase tracking-[0.24em] text-[#C6A36A] font-bold block mb-2">
                 CORPORATE ECOSYSTEM &amp; INFRASTRUCTURE
               </span>
-              <h2 className="font-serif font-bold text-3xl sm:text-4xl text-[#003D32] tracking-tight">
+              <h2 className="font-serif font-bold text-3xl sm:text-4xl text-[#2B1E1A] tracking-tight">
                 The Six Operating Verticals of Savitri Group
               </h2>
-              <p className="font-sans text-sm text-[#003D32]/75 max-w-3xl leading-relaxed font-light mt-1">
-                From pioneering optical test instruments in 1999 to nationwide 5G infrastructure, domestic manufacturing, and agro-industries.
-              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-2">
+                <p className="font-sans text-sm text-[#2B1E1A]/75 max-w-2xl leading-relaxed font-light">
+                  From pioneering optical test instruments in 1999 to nationwide 5G infrastructure, domestic manufacturing, and agro-industries.
+                </p>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2B1E1A]/5 border border-[#C6A36A]/35 text-[#2B1E1A] text-xs font-mono font-medium">
+                  <RotateCcw className="w-3 h-3 text-[#C6A36A]" /> Hover or tap cards to flip
+                </span>
+              </div>
             </div>
 
             <a
               href="https://savitri.group/business/"
               target="_blank"
               rel="noreferrer"
-              className="btn-vantara shrink-0"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#2B1E1A] hover:bg-[#3D2922] text-[#FAF7F0] border border-[#2B1E1A] font-mono text-xs font-bold tracking-wider uppercase shadow-sm hover:shadow-md transition-all duration-300 shrink-0 cursor-pointer"
             >
               <span>Visit Savitri Group Portal</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -932,75 +954,180 @@ export default function LeadershipPage({ onNavigate }) {
           <div className="verticals-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
             {businessVerticals.map((vert) => {
               const IconComponent = vert.icon;
+              const isFlipped = Boolean(flippedCards[vert.id]);
               return (
                 <div
                   key={vert.id}
-                  className="vertical-card group rounded-2xl bg-white border border-[#C6A36A]/30 shadow-sm overflow-hidden flex flex-col justify-between hover:border-[#C6A36A] hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300"
+                  className="vertical-card group flip-card-perspective h-[585px] sm:h-[610px] w-full cursor-pointer select-none"
+                  onClick={() => toggleFlip(vert.id)}
                 >
-                  <div className="p-6 space-y-4">
-                    
-                    {/* Header badge & icon */}
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-lg bg-[#FAF7F0] border border-[#C6A36A]/30 flex items-center justify-center text-[#003D32]">
-                        <IconComponent className="w-5 h-5 text-[#003D32]" />
-                      </div>
-                      <span className="font-mono text-[9px] uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#C6A36A]/15 text-[#003D32] font-semibold border border-[#C6A36A]/30">
-                        {vert.badge}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="font-mono text-[10px] uppercase tracking-wider text-[#C6A36A] font-bold block mb-1">
-                        {vert.entity}
-                      </span>
-                      <h3 className="font-serif font-bold text-xl text-[#003D32] leading-snug">
-                        {vert.title}
-                      </h3>
-                    </div>
-
-                    {/* Operational Photo */}
-                    <div
-                      className="relative overflow-hidden aspect-[16/10] rounded-lg border border-[#C6A36A]/25 bg-[#F4EFE6] cursor-pointer group"
-                      onClick={() => setLightboxImage({ src: vert.image, caption: vert.imageCaption })}
-                    >
-                      <img
-                        src={vert.image}
-                        alt={vert.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 filter contrast-[1.02]"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-white font-mono text-[11px] gap-1">
-                        <ZoomIn className="w-3.5 h-3.5 text-[#C6A36A]" /> View Field Photo
-                      </div>
-                    </div>
-                    <p className="font-mono text-[10px] text-[#003D32]/65 tracking-wider uppercase">
-                      {vert.imageCaption}
-                    </p>
-
-                    <p className="font-sans text-xs text-[#003D32]/80 leading-relaxed font-light">
-                      {vert.summary}
-                    </p>
-
-                    {/* Highlights */}
-                    <div className="space-y-1.5 pt-2 border-t border-[#C6A36A]/20">
-                      {vert.highlights.map((h, i) => (
-                        <div key={i} className="flex items-start gap-2 text-xs text-[#003D32]/85 font-light">
-                          <CheckCircle2 className="w-3 h-3 text-[#C6A36A] shrink-0 mt-0.5" />
-                          <span>{h}</span>
+                  <div
+                    className={`flip-card-inner ${isFlipped ? 'is-flipped' : ''}`}
+                  >
+                    {/* ======================================================= */}
+                    {/* FRONT FACE: MOCHA & GOLD ACCENTS                        */}
+                    {/* ======================================================= */}
+                    <div className="flip-card-front bg-white border border-[#C6A36A]/35 shadow-sm overflow-hidden flex flex-col justify-between group-hover:border-[#C6A36A] group-hover:shadow-xl transition-all duration-300">
+                      <div className="p-5 sm:p-6 space-y-3.5">
+                        {/* Header badge & icon */}
+                        <div className="flex items-center justify-between">
+                          <div className="w-10 h-10 rounded-xl bg-[#FAF7F0] border border-[#C6A36A]/35 flex items-center justify-center text-[#2B1E1A] shadow-xs">
+                            <IconComponent className="w-5 h-5 text-[#2B1E1A]" />
+                          </div>
+                          <span className="font-mono text-[9px] uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#C6A36A]/15 text-[#2B1E1A] font-semibold border border-[#C6A36A]/30">
+                            {vert.badge}
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
 
-                  <div className="p-4 bg-[#FAF7F0] border-t border-[#C6A36A]/20">
-                    <a
-                      href={vert.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn-vantara w-full"
-                    >
-                      <span>{vert.linkText}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </a>
+                        <div>
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-[#C6A36A] font-bold block mb-1">
+                            {vert.entity}
+                          </span>
+                          <h3 className="font-serif font-bold text-xl text-[#2B1E1A] leading-snug">
+                            {vert.title}
+                          </h3>
+                        </div>
+
+                        {/* Operational Photo */}
+                        <div
+                          className="relative overflow-hidden aspect-[16/10] rounded-xl border border-[#C6A36A]/25 bg-[#F4EFE6] cursor-pointer group/img shadow-inner"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLightboxImage({ src: vert.image, caption: vert.imageCaption });
+                          }}
+                        >
+                          <img
+                            src={vert.image}
+                            alt={vert.title}
+                            className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500 filter contrast-[1.02]"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center text-white font-mono text-[11px] gap-1 backdrop-blur-[1px]">
+                            <ZoomIn className="w-3.5 h-3.5 text-[#C6A36A]" /> View Full Photo
+                          </div>
+                        </div>
+
+                        {/* Impact Stat Pills */}
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {vert.metrics.map((m, mIdx) => (
+                            <span
+                              key={mIdx}
+                              className="inline-flex items-center gap-1 font-mono text-[10px] px-2.5 py-1 rounded-md bg-[#FAF7F0] border border-[#C6A36A]/35 text-[#2B1E1A] font-semibold shadow-2xs"
+                            >
+                              <Sparkles className="w-2.5 h-2.5 text-[#C6A36A] shrink-0" />
+                              <span>{m}</span>
+                            </span>
+                          ))}
+                        </div>
+
+                        <p className="font-sans text-xs text-[#2B1E1A]/80 leading-relaxed font-light line-clamp-2">
+                          {vert.summary}
+                        </p>
+                      </div>
+
+                      {/* Front Bottom Bar: Direct Link Button + Hover to Flip cue */}
+                      <div className="p-3.5 sm:p-4 bg-[#FAF7F0] border-t border-[#C6A36A]/20 flex items-center justify-between gap-2">
+                        <a
+                          href={vert.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 py-1.5 px-3.5 rounded-full text-xs font-mono font-semibold bg-[#2B1E1A] hover:bg-[#3D2922] text-[#FAF7F0] border border-[#2B1E1A] shadow-xs transition-colors shrink-0 cursor-pointer"
+                        >
+                          <span>{vert.linkText}</span>
+                          <ArrowRight className="w-3 h-3 text-[#C6A36A]" />
+                        </a>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#2B1E1A]/8 text-[#2B1E1A] font-mono text-[9.5px] font-bold tracking-wider uppercase group-hover:bg-[#C6A36A] group-hover:text-[#2B1E1A] transition-colors shrink-0">
+                          <span>Hover to Flip</span>
+                          <RotateCcw className="w-2.5 h-2.5 text-[#C6A36A] group-hover:text-[#2B1E1A]" />
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* ======================================================= */}
+                    {/* BACK FACE: RICH MOCHA ESPRESSO & CHAMPAGNE GOLD         */}
+                    {/* ======================================================= */}
+                    <div className="flip-card-back bg-[#261A15] text-[#FAF7F0] border-2 border-[#C6A36A] shadow-2xl overflow-hidden flex flex-col justify-between">
+                      <div className="p-5 sm:p-6 space-y-3.5 overflow-y-auto">
+                        {/* Header on back face */}
+                        <div className="flex items-center justify-between border-b border-[#C6A36A]/30 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="w-4 h-4 text-[#C6A36A]" />
+                            <span className="font-mono text-[10px] uppercase tracking-widest text-[#C6A36A] font-bold">
+                              Technical Blueprint
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFlip(vert.id);
+                            }}
+                            className="font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[#FAF7F0] transition-colors cursor-pointer flex items-center gap-1"
+                            title="Flip back to front"
+                          >
+                            <span>Front</span>
+                            <RotateCcw className="w-2.5 h-2.5 text-[#C6A36A]" />
+                          </button>
+                        </div>
+
+                        <div>
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-[#C6A36A] font-bold block mb-1">
+                            {vert.entity}
+                          </span>
+                          <h3 className="font-serif font-bold text-xl text-[#FAF7F0] leading-snug">
+                            {vert.title}
+                          </h3>
+                        </div>
+
+                        <p className="font-sans text-xs text-[#FAF7F0]/85 leading-relaxed font-light">
+                          {vert.summary}
+                        </p>
+
+                        {/* Technical Capabilities & Checklist */}
+                        <div className="space-y-2 pt-1 border-t border-[#C6A36A]/25">
+                          <div className="font-mono text-[10px] text-[#C6A36A] uppercase tracking-widest font-bold">
+                            Operational Scope &amp; Standards:
+                          </div>
+                          {vert.highlights.map((h, i) => (
+                            <div key={i} className="flex items-start gap-2 text-xs text-[#FAF7F0]/90 font-light">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#C6A36A] shrink-0 mt-0.5" />
+                              <span className="leading-snug">{h}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Ecosystem & Partner Tags */}
+                        <div className="pt-1.5 border-t border-white/10 space-y-1.5">
+                          <div className="font-mono text-[9px] uppercase tracking-widest text-[#FAF7F0]/55 font-semibold">
+                            Ecosystem &amp; Partners
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {vert.tags.map((tag, tIdx) => (
+                              <span
+                                key={tIdx}
+                                className="font-mono text-[9.5px] px-2 py-0.5 rounded bg-[#FAF7F0]/10 text-[#FAF7F0]/90 border border-white/10"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Prominent Active CTA Button on Back Face (Ivory) */}
+                      <div className="p-4 bg-[#180E0A] border-t border-[#C6A36A]/30">
+                        <a
+                          href={vert.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#FAF7F0] hover:bg-white text-[#261A15] hover:text-black border border-[#C6A36A]/60 hover:border-[#C6A36A] font-mono text-xs font-bold tracking-wider uppercase shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+                        >
+                          <span>{vert.linkText}</span>
+                          <ExternalLink className="w-3.5 h-3.5 text-[#261A15]" />
+                        </a>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );

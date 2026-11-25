@@ -30,6 +30,9 @@ import img2015 from '../assets/media/2015.jpg';
 import img2024 from '../assets/media/STS-ET-Business-Leaders-Award-2024.jpg';
 
 gsap.registerPlugin(ScrollTrigger);
+if (typeof window !== 'undefined') {
+  window.ScrollTrigger = ScrollTrigger;
+}
 
 // Clean, backend-ready JSON schema for Dr. Rai's Life Journey (Vantara Editorial Format)
 const journeyChapters = [
@@ -251,19 +254,15 @@ function OpticalFiberBackground() {
 export default function AboutPage({ onNavigate }) {
   const pageRef = useRef(null);
   const journeySectionRef = useRef(null);
+  const scrollTriggerRef = useRef(null);
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
   const [chapterProgress, setChapterProgress] = useState(0); // 0 to 1 scroll indicator
   const activeChapterRef = useRef(0);
-  const isTransitioningRef = useRef(false);
-  const isLockedRef = useRef(false);
-  const isExitingRef = useRef(false);
-  const lockCooldownRef = useRef(false);
-  const stepCooldownRef = useRef(false);
-  const accumulatedDeltaRef = useRef(0);
-  const decayTimeoutRef = useRef(null);
 
   const cardRefs = useRef([]);
   const contentRefs = useRef([]);
+  const touchStartXRef = useRef(0);
+  const touchStartYRef = useRef(0);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.__lenis) {
@@ -275,150 +274,119 @@ export default function AboutPage({ onNavigate }) {
 
   // Smooth, luxurious GSAP cross-fade between chapters
   const transitionToChapter = (nextIdx) => {
-    if (nextIdx === activeChapterRef.current || isTransitioningRef.current) return;
+    if (nextIdx === activeChapterRef.current) return;
     if (nextIdx < 0 || nextIdx >= journeyChapters.length) return;
 
-    isTransitioningRef.current = true;
-    const currentIdx = activeChapterRef.current;
-    const isForward = nextIdx > currentIdx;
+    const prevIdx = activeChapterRef.current;
+    activeChapterRef.current = nextIdx;
+    setActiveChapterIndex(nextIdx);
 
-    const currentCard = cardRefs.current[currentIdx];
-    const nextCard = cardRefs.current[nextIdx];
-    const currentContent = contentRefs.current[currentIdx];
-    const nextContent = contentRefs.current[nextIdx];
+    const isForward = nextIdx > prevIdx;
 
-    const tl = gsap.timeline({
-      defaults: { ease: 'power2.inOut' },
-      onComplete: () => {
-        activeChapterRef.current = nextIdx;
-        setActiveChapterIndex(nextIdx);
-        setChapterProgress(0);
-        isTransitioningRef.current = false;
-      },
+    // Card animations with automatic overwrite to handle rapid scrubbing
+    cardRefs.current.forEach((card, idx) => {
+      if (!card) return;
+      if (idx === nextIdx) {
+        gsap.set(card, { zIndex: 10 });
+        gsap.fromTo(
+          card,
+          { opacity: 0, scale: isForward ? 0.94 : 1.04, yPercent: isForward ? 12 : -12 },
+          { opacity: 1, scale: 1, yPercent: 0, duration: 0.42, ease: 'power2.out', overwrite: 'auto' }
+        );
+      } else if (idx === prevIdx) {
+        gsap.set(card, { zIndex: 5 });
+        gsap.to(card, {
+          opacity: 0,
+          scale: isForward ? 1.04 : 0.94,
+          yPercent: isForward ? -12 : 12,
+          duration: 0.35,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+      } else {
+        gsap.set(card, { opacity: 0, scale: 0.94, yPercent: 12, zIndex: 1 });
+      }
     });
 
-    // 1. Text transition
-    if (currentContent) {
-      tl.to(
-        currentContent,
-        {
+    // Narrative content animations
+    contentRefs.current.forEach((content, idx) => {
+      if (!content) return;
+      if (idx === nextIdx) {
+        gsap.fromTo(
+          content,
+          { opacity: 0, y: isForward ? 25 : -25, pointerEvents: 'none' },
+          { opacity: 1, y: 0, duration: 0.38, pointerEvents: 'auto', ease: 'power2.out', overwrite: 'auto' }
+        );
+      } else if (idx === prevIdx) {
+        gsap.to(content, {
           opacity: 0,
           y: isForward ? -25 : 25,
-          duration: 0.32,
+          duration: 0.28,
           pointerEvents: 'none',
           ease: 'power2.in',
-        },
-        0
-      );
-    }
+          overwrite: 'auto',
+        });
+      } else {
+        gsap.set(content, { opacity: 0, y: 25, pointerEvents: 'none' });
+      }
+    });
 
-    if (nextContent) {
-      tl.fromTo(
-        nextContent,
-        { opacity: 0, y: isForward ? 25 : -25, pointerEvents: 'none' },
-        { opacity: 1, y: 0, duration: 0.4, pointerEvents: 'auto', ease: 'power2.out' },
-        0.12
-      );
-    }
-
-    // 2. Card transition
-    if (currentCard) {
-      tl.to(
-        currentCard,
-        {
-          opacity: 0,
-          scale: isForward ? 1.04 : 0.95,
-          yPercent: isForward ? -12 : 12,
-          duration: 0.42,
-          ease: 'power2.inOut',
-        },
-        0
-      );
-    }
-
-    if (nextCard) {
-      gsap.set(nextCard, { zIndex: 10 });
-      if (currentCard) gsap.set(currentCard, { zIndex: 5 });
-
-      tl.fromTo(
-        nextCard,
-        {
-          opacity: 0,
-          scale: isForward ? 0.94 : 1.04,
-          yPercent: isForward ? 12 : -12,
-        },
-        {
-          opacity: 1,
-          scale: 1,
-          yPercent: 0,
-          duration: 0.45,
-          ease: 'power2.out',
-        },
-        0.04
-      );
-    }
-
-    // 3. Dynamic background color morph between Forest Green & Mocha Brown
+    // Dynamic background color morph between Forest Green & Mocha Brown
     if (journeySectionRef.current && journeyChapters[nextIdx]?.themeBg) {
-      tl.to(
-        journeySectionRef.current,
-        {
-          backgroundColor: journeyChapters[nextIdx].themeBg,
-          duration: 0.48,
-          ease: 'power1.inOut',
-        },
-        0
-      );
+      gsap.to(journeySectionRef.current, {
+        backgroundColor: journeyChapters[nextIdx].themeBg,
+        duration: 0.48,
+        ease: 'power1.inOut',
+        overwrite: 'auto',
+      });
     }
   };
 
-  const unlockAndScrollTo = (targetId, fallbackTop = 0) => {
-    isLockedRef.current = false;
-    isExitingRef.current = targetId ? 'down' : 'up';
-    accumulatedDeltaRef.current = 0;
-    setChapterProgress(0);
-
-    if (typeof window !== 'undefined' && window.__lenis) {
-      window.__lenis.start();
-    }
-
-    // Cooldown window so user's natural scrolling passes through freely into the target section
-    setTimeout(() => {
-      isExitingRef.current = false;
-    }, 2500);
-
-    if (targetId) {
-      const target = document.getElementById(targetId);
-      if (target) {
-        if (typeof window !== 'undefined' && window.__lenis) {
-          window.__lenis.scrollTo(target, { duration: 1.2 });
-        } else {
-          target.scrollIntoView({ behavior: 'smooth' });
-        }
-        return;
+  // Programmatic jump to a specific chapter (used by buttons, dots, keyboard, swipe)
+  const goToChapter = (targetIdx) => {
+    if (targetIdx < 0 || targetIdx >= journeyChapters.length) return;
+    const st = scrollTriggerRef.current;
+    if (st) {
+      const progressRatio = (targetIdx + 0.15) / journeyChapters.length;
+      const targetScroll = st.start + progressRatio * (st.end - st.start);
+      if (typeof window !== 'undefined' && window.__lenis) {
+        window.__lenis.scrollTo(targetScroll, { duration: 0.75 });
+      } else {
+        window.scrollTo({ top: targetScroll, behavior: 'smooth' });
       }
-    }
-
-    if (typeof window !== 'undefined' && window.__lenis) {
-      window.__lenis.scrollTo(fallbackTop, { duration: 1.2 });
     } else {
-      window.scrollTo({ top: fallbackTop, behavior: 'smooth' });
+      transitionToChapter(targetIdx);
     }
   };
 
   const handleNextClick = () => {
-    if (activeChapterIndex < journeyChapters.length - 1) {
-      transitionToChapter(activeChapterIndex + 1);
+    if (activeChapterRef.current < journeyChapters.length - 1) {
+      goToChapter(activeChapterRef.current + 1);
     } else {
-      unlockAndScrollTo('achievements-gallery');
+      const st = scrollTriggerRef.current;
+      const mosaic = document.getElementById('achievements-gallery');
+      const targetY = mosaic ? mosaic.offsetTop : (st ? st.end + 60 : null);
+      if (typeof window !== 'undefined' && window.__lenis) {
+        window.__lenis.scrollTo(mosaic || targetY, { duration: 1.0 });
+      } else if (mosaic) {
+        mosaic.scrollIntoView({ behavior: 'smooth' });
+      } else if (targetY !== null) {
+        window.scrollTo({ top: targetY, behavior: 'smooth' });
+      }
     }
   };
 
   const handlePrevClick = () => {
-    if (activeChapterIndex > 0) {
-      transitionToChapter(activeChapterIndex - 1);
+    if (activeChapterRef.current > 0) {
+      goToChapter(activeChapterRef.current - 1);
     } else {
-      unlockAndScrollTo(null, 0);
+      const st = scrollTriggerRef.current;
+      const targetY = st ? Math.max(0, st.start - 60) : 0;
+      if (typeof window !== 'undefined' && window.__lenis) {
+        window.__lenis.scrollTo(targetY, { duration: 1.0 });
+      } else {
+        window.scrollTo({ top: targetY, behavior: 'smooth' });
+      }
     }
   };
 
@@ -428,7 +396,7 @@ export default function AboutPage({ onNavigate }) {
       const section = journeySectionRef.current;
       if (!section) return;
       const rect = section.getBoundingClientRect();
-      const inView = rect.top <= 100 && rect.bottom >= window.innerHeight - 100;
+      const inView = rect.top <= 120 && rect.bottom >= 120;
       if (!inView) return;
 
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
@@ -442,14 +410,41 @@ export default function AboutPage({ onNavigate }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeChapterIndex]);
+  }, []);
 
-  // Initial layout for cards and contents
+  // Horizontal touch swipe handling for mobile / tablet cards
+  const handleTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!e.changedTouches || !e.changedTouches[0]) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+      if (deltaX < 0) {
+        handleNextClick();
+      } else {
+        handlePrevClick();
+      }
+    }
+  };
+
+  // Robust GSAP ScrollTrigger Section Pinning
+  // Works flawlessly on desktop, small laptop, tablet, and mobile touch
   useLayoutEffect(() => {
+    const section = journeySectionRef.current;
+    if (!section) return;
+
     const cards = cardRefs.current;
     const contents = contentRefs.current;
 
+    // Initial state setup for cards and contents
     cards.forEach((card, idx) => {
+      if (!card) return;
       if (idx === 0) {
         gsap.set(card, { opacity: 1, scale: 1, yPercent: 0, zIndex: 10 });
       } else {
@@ -458,192 +453,54 @@ export default function AboutPage({ onNavigate }) {
     });
 
     contents.forEach((content, idx) => {
+      if (!content) return;
       if (idx === 0) {
         gsap.set(content, { opacity: 1, y: 0, pointerEvents: 'auto' });
       } else {
         gsap.set(content, { opacity: 0, y: 25, pointerEvents: 'none' });
       }
     });
-  }, []);
 
-  // True Section Lock & Symmetrical Bidirectional Wheel-Accumulator Gate (3-4s per chapter in both directions)
-  useEffect(() => {
-    const section = journeySectionRef.current;
-    if (!section) return;
+    if (journeyChapters[0]?.themeBg) {
+      gsap.set(section, { backgroundColor: journeyChapters[0].themeBg });
+    }
 
-    // Threshold calibrated for ~3 to 4 seconds of comfortable scrolling per chapter
-    const SCROLL_THRESHOLD = 1500;
-    // Deliberate threshold to exit out of Chapter 6 (into Mosaic) or Chapter 1 (back to Brief)
-    const EXIT_THRESHOLD = 450;
+    const totalChapters = journeyChapters.length;
+    // Calibrated pinned scroll length for ~3 seconds of smooth scrolling per chapter
+    const pinDistance = Math.max(2600, window.innerHeight * 3.8);
 
-    const handleWheel = (e) => {
-      // If currently exiting via an unlock sequence, do not intercept!
-      if (isExitingRef.current) return;
+    const st = ScrollTrigger.create({
+      id: 'about-journey-pin',
+      trigger: section,
+      start: 'top top',
+      end: () => `+=${pinDistance}`,
+      pin: true,
+      pinSpacing: true,
+      anticipatePin: 1,
+      invalidateOnRefresh: true,
+      onUpdate: (self) => {
+        const p = self.progress; // 0.0 to 1.0
+        const rawChapter = p * (totalChapters - 0.001);
+        const targetIdx = Math.min(totalChapters - 1, Math.max(0, Math.floor(rawChapter)));
+        const localProg = rawChapter - targetIdx; // 0.0 to 1.0 within active chapter
 
-      const rect = section.getBoundingClientRect();
-      const isVisible = rect.top <= 120 && rect.bottom >= window.innerHeight - 120;
+        setChapterProgress(Math.max(0, Math.min(1, localProg)));
 
-      if (!isVisible && !isLockedRef.current) return;
-
-      // Lock on screen when section reaches the viewport
-      if (isVisible && !isLockedRef.current) {
-        // Detect whether the user entered from above (Executive Brief) or below (Archival Mosaic)
-        const comingFromBelow =
-          rect.top < -50 || (typeof window !== 'undefined' && window.scrollY > section.offsetTop + 100);
-
-        isLockedRef.current = true;
-        lockCooldownRef.current = true;
-        accumulatedDeltaRef.current = 0;
-        setChapterProgress(0);
-
-        // Snap cleanly to section offset
-        if (typeof window !== 'undefined') {
-          if (window.__lenis) {
-            window.__lenis.scrollTo(section, { immediate: true });
-            window.__lenis.stop();
-          } else {
-            window.scrollTo({ top: section.offsetTop, behavior: 'instant' });
-          }
+        if (targetIdx !== activeChapterRef.current) {
+          transitionToChapter(targetIdx);
         }
+      },
+    });
 
-        if (comingFromBelow) {
-          // Entering backward from Archival Mosaic: lock cleanly on Chapter 6
-          const lastIdx = journeyChapters.length - 1;
-          activeChapterRef.current = lastIdx;
-          setActiveChapterIndex(lastIdx);
-          cardRefs.current.forEach((c, i) => {
-            if (i === lastIdx) gsap.set(c, { opacity: 1, scale: 1, yPercent: 0, zIndex: 10 });
-            else gsap.set(c, { opacity: 0, scale: 0.94, yPercent: 12, zIndex: 1 });
-          });
-          contentRefs.current.forEach((cnt, i) => {
-            if (i === lastIdx) gsap.set(cnt, { opacity: 1, y: 0, pointerEvents: 'auto' });
-            else gsap.set(cnt, { opacity: 0, y: 25, pointerEvents: 'none' });
-          });
-          if (journeyChapters[lastIdx]?.themeBg) {
-            gsap.set(section, { backgroundColor: journeyChapters[lastIdx].themeBg });
-          }
-        } else {
-          // Entering forward from Executive Brief: lock cleanly on Chapter 1
-          activeChapterRef.current = 0;
-          setActiveChapterIndex(0);
-          cardRefs.current.forEach((c, i) => {
-            if (i === 0) gsap.set(c, { opacity: 1, scale: 1, yPercent: 0, zIndex: 10 });
-            else gsap.set(c, { opacity: 0, scale: 0.94, yPercent: 12, zIndex: 1 });
-          });
-          contentRefs.current.forEach((cnt, i) => {
-            if (i === 0) gsap.set(cnt, { opacity: 1, y: 0, pointerEvents: 'auto' });
-            else gsap.set(cnt, { opacity: 0, y: 25, pointerEvents: 'none' });
-          });
-          if (journeyChapters[0]?.themeBg) {
-            gsap.set(section, { backgroundColor: journeyChapters[0].themeBg });
-          }
-        }
+    scrollTriggerRef.current = st;
 
-        // Brief cooldown to absorb leftover scroll momentum from previous section
-        setTimeout(() => {
-          lockCooldownRef.current = false;
-        }, 500);
-
-        e.preventDefault();
-        return;
-      }
-
-      if (!isLockedRef.current) return;
-
-      // Prevent window scroll runaway while locked
-      e.preventDefault();
-
-      // If in lock settling cooldown, active transition, or step cooldown, absorb wheel events
-      if (lockCooldownRef.current || isTransitioningRef.current || stepCooldownRef.current) {
-        return;
-      }
-
-      const currentIdx = activeChapterRef.current;
-      const isDown = e.deltaY > 0;
-
-      if (isDown) {
-        // =================================================================
-        // SCROLLING DOWN (FORWARD PROGRESSION)
-        // =================================================================
-        if (currentIdx < journeyChapters.length - 1) {
-          accumulatedDeltaRef.current += Math.abs(e.deltaY);
-          const prog = Math.min(1, accumulatedDeltaRef.current / SCROLL_THRESHOLD);
-          setChapterProgress(prog);
-
-          clearTimeout(decayTimeoutRef.current);
-          decayTimeoutRef.current = setTimeout(() => {
-            accumulatedDeltaRef.current = 0;
-            setChapterProgress(0);
-          }, 1400);
-
-          if (prog >= 1) {
-            clearTimeout(decayTimeoutRef.current);
-            accumulatedDeltaRef.current = 0;
-            setChapterProgress(0);
-            stepCooldownRef.current = true;
-            transitionToChapter(currentIdx + 1);
-            setTimeout(() => {
-              stepCooldownRef.current = false;
-            }, 600);
-          }
-        } else {
-          // On Chapter 6 (last chapter):
-          // Deliberate continued downward scroll exits into Archival Photo Mosaic
-          accumulatedDeltaRef.current += Math.abs(e.deltaY);
-          const exitProg = Math.min(1, accumulatedDeltaRef.current / EXIT_THRESHOLD);
-          setChapterProgress(exitProg);
-
-          if (accumulatedDeltaRef.current >= EXIT_THRESHOLD) {
-            unlockAndScrollTo('achievements-gallery');
-          }
-        }
-      } else {
-        // =================================================================
-        // SCROLLING UP (BACKWARD PROGRESSION — IDENTICAL SMOOTH PACING)
-        // =================================================================
-        if (currentIdx > 0) {
-          accumulatedDeltaRef.current += Math.abs(e.deltaY);
-          const prog = Math.min(1, accumulatedDeltaRef.current / SCROLL_THRESHOLD);
-          setChapterProgress(prog);
-
-          clearTimeout(decayTimeoutRef.current);
-          decayTimeoutRef.current = setTimeout(() => {
-            accumulatedDeltaRef.current = 0;
-            setChapterProgress(0);
-          }, 1400);
-
-          if (prog >= 1) {
-            clearTimeout(decayTimeoutRef.current);
-            accumulatedDeltaRef.current = 0;
-            setChapterProgress(0);
-            stepCooldownRef.current = true;
-            transitionToChapter(currentIdx - 1);
-            setTimeout(() => {
-              stepCooldownRef.current = false;
-            }, 600);
-          }
-        } else {
-          // On Chapter 1 (first chapter):
-          // Deliberate continued upward scroll exits back to Executive Brief
-          accumulatedDeltaRef.current += Math.abs(e.deltaY);
-          const exitProg = Math.min(1, accumulatedDeltaRef.current / EXIT_THRESHOLD);
-          setChapterProgress(exitProg);
-
-          if (accumulatedDeltaRef.current >= EXIT_THRESHOLD) {
-            unlockAndScrollTo(null, 0);
-          }
-        }
-      }
-    };
-
-    window.addEventListener('wheel', handleWheel, { passive: false });
+    const timer = setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 150);
 
     return () => {
-      window.removeEventListener('wheel', handleWheel);
-      clearTimeout(decayTimeoutRef.current);
-      if (typeof window !== 'undefined' && window.__lenis) {
-        window.__lenis.start();
-      }
+      clearTimeout(timer);
+      if (st) st.kill();
     };
   }, []);
 
@@ -770,49 +627,50 @@ export default function AboutPage({ onNavigate }) {
       <section
         id="biographical-journey"
         ref={journeySectionRef}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         style={{
           backgroundColor: journeyChapters[0].themeBg,
-          transition: 'background-color 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
-        className="relative w-full h-screen h-[100dvh] overflow-hidden text-[#FAF8F5] select-none flex flex-col justify-between pt-16 sm:pt-14 pb-5 px-6 sm:px-10 lg:px-16"
+        className="relative w-full h-screen h-[100dvh] overflow-hidden text-[#FAF8F5] select-none flex flex-col justify-between pt-12 sm:pt-14 lg:pt-16 pb-3 sm:pb-4 lg:pb-5 px-4 sm:px-8 lg:px-12 xl:px-16"
       >
         {/* Infinite Moving Optical Fiber Background (Lightweight) */}
         <OpticalFiberBackground />
 
         {/* Top Minimalist Folio Header */}
-        <div className="relative z-10 max-w-[1400px] w-full mx-auto flex items-center justify-between pb-3 sm:pb-4 border-b border-white/15">
-          <div className="flex items-center gap-3">
+        <div className="relative z-10 max-w-[1400px] w-full mx-auto flex items-center justify-between pb-2.5 sm:pb-4 border-b border-white/15">
+          <div className="flex items-center gap-2 sm:gap-3">
             <span className="w-2 h-2 rounded-full bg-[#00E5B3] animate-pulse" />
-            <span className="font-mono text-xs uppercase tracking-[0.25em] text-[#FAF8F5]/80 font-bold">
+            <span className="font-mono text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#FAF8F5]/80 font-bold truncate max-w-[200px] sm:max-w-none">
               RAVI SHANKAR RAI // BIOGRAPHICAL ARCHIVE
             </span>
           </div>
 
           {/* Interactive Chapter Indicator with Live Scroll Reading Progress */}
-          <div className="flex flex-col items-end gap-1.5">
-            <div className="flex items-center gap-3 bg-black/40 px-3.5 py-1.5 rounded-full border border-white/20 backdrop-blur-md">
-              <div className="flex items-center gap-1.5">
+          <div className="flex flex-col items-end gap-1 sm:gap-1.5 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 bg-black/40 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-white/20 backdrop-blur-md">
+              <div className="flex items-center gap-1 sm:gap-1.5">
                 {journeyChapters.map((ch, cIdx) => (
                   <button
                     key={ch.id}
                     type="button"
-                    onClick={() => transitionToChapter(cIdx)}
-                    className={`h-2 rounded-full transition-all cursor-pointer ${
+                    onClick={() => goToChapter(cIdx)}
+                    className={`h-1.5 sm:h-2 rounded-full transition-all cursor-pointer ${
                       activeChapterIndex === cIdx
-                        ? 'w-7 bg-[#FAF8F5]'
-                        : 'w-2 bg-white/25 hover:bg-white/60'
+                        ? 'w-5 sm:w-7 bg-[#FAF8F5]'
+                        : 'w-1.5 sm:w-2 bg-white/25 hover:bg-white/60'
                     }`}
                     title={`Jump to ${ch.chapter}`}
                   />
                 ))}
               </div>
-              <span className="font-mono text-xs text-[#FAF8F5] font-semibold pl-2 border-l border-white/20">
+              <span className="font-mono text-[11px] sm:text-xs text-[#FAF8F5] font-semibold pl-1.5 sm:pl-2 border-l border-white/20">
                 0{activeChapterIndex + 1} / 06
               </span>
             </div>
 
-            {/* Glowing Golden Scroll Progress Line (Fills as user scrolls over 3-4s) */}
-            <div className="w-28 h-1 bg-white/15 rounded-full overflow-hidden mr-1">
+            {/* Glowing Golden Scroll Progress Line */}
+            <div className="w-20 sm:w-28 h-1 bg-white/15 rounded-full overflow-hidden mr-1">
               <div
                 className="h-full bg-gradient-to-r from-[#00E5B3] via-[#C6A36A] to-[#FAF8F5] transition-all duration-75 ease-out rounded-full shadow-[0_0_8px_rgba(0,229,179,0.6)]"
                 style={{ width: `${Math.max(chapterProgress > 0 ? 8 : 0, chapterProgress * 100)}%` }}
@@ -822,11 +680,11 @@ export default function AboutPage({ onNavigate }) {
         </div>
 
         {/* Main Stage: Left Image Card vs Right Editorial Narrative (Clean Vantara Format) */}
-        <div className="relative z-10 max-w-[1400px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center my-auto">
+        <div className="relative z-10 max-w-[1400px] w-full mx-auto grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 md:gap-8 lg:gap-12 xl:gap-14 items-center my-auto">
           
           {/* LEFT COLUMN: Clean Vantara Image Card with Docked Stat Pill */}
-          <div className="lg:col-span-6 flex justify-center lg:justify-start">
-            <div className="relative w-full max-w-[400px] sm:max-w-[450px] lg:max-w-[480px] h-[380px] sm:h-[440px] lg:h-[490px] xl:h-[530px] rounded-[28px] sm:rounded-[34px] overflow-hidden shadow-2xl shadow-black/70 border border-white/15 bg-black/40">
+          <div className="md:col-span-5 lg:col-span-6 flex justify-center lg:justify-start">
+            <div className="relative w-full max-w-[340px] sm:max-w-[390px] md:max-w-[360px] lg:max-w-[430px] xl:max-w-[480px] h-[195px] sm:h-[240px] md:h-[340px] lg:h-[390px] xl:h-[450px] rounded-2xl sm:rounded-[28px] lg:rounded-[34px] overflow-hidden shadow-2xl shadow-black/70 border border-white/15 bg-black/40">
               {journeyChapters.map((ch, idx) => (
                 <div
                   key={ch.id}
@@ -840,37 +698,37 @@ export default function AboutPage({ onNavigate }) {
                     className="w-full h-full object-cover filter contrast-[1.03] brightness-[0.98]"
                   />
                   {/* Subtle Gradient Vignette */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
 
                   {/* Top Era Floating Pill */}
-                  <div className="absolute top-4 left-4 z-20">
-                    <span className="font-mono text-xs tracking-wider px-3.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[#FAF8F5] border border-white/20 font-semibold shadow-sm">
+                  <div className="absolute top-2.5 left-2.5 sm:top-4 sm:left-4 z-20">
+                    <span className="font-mono text-[9.5px] sm:text-xs tracking-wider px-2 sm:px-3.5 py-0.5 sm:py-1 rounded-full bg-black/60 backdrop-blur-md text-[#FAF8F5] border border-white/20 font-semibold shadow-sm">
                       {ch.era}
                     </span>
                   </div>
 
                   {/* Vantara Signature Bottom-Left Stat Pill */}
-                  <div className="absolute bottom-4 left-4 z-20 bg-[#FAF7F0] text-[#003D32] rounded-2xl p-4 sm:p-5 shadow-2xl border border-black/10 min-w-[210px] sm:min-w-[240px] max-w-[280px]">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="w-5 h-0.5 bg-[#C6A36A]" />
-                      <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.16em] text-[#003D32]/70 font-bold block">
+                  <div className="absolute bottom-2 left-2 right-2 sm:bottom-4 sm:left-4 sm:right-auto z-20 bg-[#FAF7F0] text-[#003D32] rounded-xl sm:rounded-2xl p-2 sm:p-3.5 lg:p-4.5 shadow-2xl border border-black/10 min-w-0 sm:min-w-[200px] md:min-w-[210px] max-w-[270px]">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+                      <div className="w-3.5 sm:w-5 h-0.5 bg-[#C6A36A]" />
+                      <span className="font-mono text-[8px] sm:text-[9.5px] uppercase tracking-[0.16em] text-[#003D32]/70 font-bold block truncate">
                         {ch.statLabel}
                       </span>
                     </div>
-                    <div className="flex items-baseline justify-between gap-3 mt-0.5">
-                      <span className="font-serif font-bold text-2xl sm:text-3xl lg:text-[34px] text-[#003D32] tracking-tight leading-none font-numeric">
+                    <div className="flex items-baseline justify-between gap-2 sm:gap-3 mt-0.5">
+                      <span className="font-serif font-bold text-lg sm:text-2xl lg:text-[28px] text-[#003D32] tracking-tight leading-none font-numeric">
                         {ch.statValue}
                       </span>
                       <button
                         type="button"
                         onClick={handleNextClick}
-                        className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-[#003D32]/10 hover:bg-[#003D32]/20 text-[#003D32] border border-[#003D32]/15 shrink-0 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-mono font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-[#003D32]/10 hover:bg-[#003D32]/20 text-[#003D32] border border-[#003D32]/15 shrink-0 transition-colors cursor-pointer"
                       >
-                        {ch.statAction}
-                        <ArrowRight className="w-3 h-3" />
+                        <span>{ch.statAction}</span>
+                        <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                       </button>
                     </div>
-                    <div className="mt-2.5 pt-2 border-t border-[#003D32]/10 font-mono text-[11px] text-[#003D32]/75 font-medium truncate">
+                    <div className="hidden sm:block mt-1.5 pt-1 border-t border-[#003D32]/10 font-mono text-[10px] sm:text-[11px] text-[#003D32]/75 font-medium truncate">
                       {ch.statSub}
                     </div>
                   </div>
@@ -880,46 +738,46 @@ export default function AboutPage({ onNavigate }) {
           </div>
 
           {/* RIGHT COLUMN: Clean Vantara Editorial Narrative */}
-          <div className="lg:col-span-6 relative h-[380px] sm:h-[430px] lg:h-[480px] flex items-center">
+          <div className="md:col-span-7 lg:col-span-6 relative h-[195px] sm:h-[240px] md:h-[340px] lg:h-[390px] xl:h-[450px] flex items-center">
             {journeyChapters.map((ch, idx) => (
               <div
                 key={ch.id}
                 ref={(el) => (contentRefs.current[idx] = el)}
-                className="journey-stack-content absolute inset-0 flex flex-col justify-center space-y-4 sm:space-y-5 will-change-transform"
+                className="journey-stack-content absolute inset-0 flex flex-col justify-center space-y-2 sm:space-y-3.5 lg:space-y-4.5 will-change-transform"
               >
                 {/* Chapter Era & Number */}
-                <div className="flex items-center gap-3">
-                  <span className="px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 font-mono text-xs uppercase tracking-[0.2em] text-[#FAF8F5]/90 font-semibold backdrop-blur-md">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className="px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full bg-white/10 border border-white/20 font-mono text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[#FAF8F5]/90 font-semibold backdrop-blur-md">
                     {ch.chapter} // {ch.era}
                   </span>
                 </div>
 
                 {/* Headline */}
-                <h2 className="font-serif font-normal text-3xl sm:text-4xl lg:text-[42px] xl:text-[46px] text-[#FAF8F5] tracking-tight leading-[1.12]">
+                <h2 className="font-serif font-normal text-xl sm:text-2xl md:text-2xl lg:text-[34px] xl:text-[40px] text-[#FAF8F5] tracking-tight leading-[1.14]">
                   {ch.title}
                 </h2>
 
                 {/* Narrative */}
-                <p className="font-sans text-sm sm:text-base lg:text-[17px] text-[#FAF8F5]/85 leading-[1.7] font-light max-w-xl">
+                <p className="font-sans text-xs sm:text-sm lg:text-[15px] xl:text-[16px] text-[#FAF8F5]/85 leading-relaxed font-light max-w-xl line-clamp-3 sm:line-clamp-4 md:line-clamp-none">
                   {ch.narrative}
                 </p>
 
                 {/* Vantara Pill CTA Button */}
-                <div className="pt-2 flex items-center gap-4">
+                <div className="pt-0.5 sm:pt-1.5 flex items-center gap-3 sm:gap-4">
                   <button
                     type="button"
                     onClick={handleNextClick}
-                    className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-white/35 hover:border-white text-[#FAF8F5] hover:bg-[#FAF8F5] hover:text-[#0B3828] font-mono text-xs uppercase tracking-wider font-semibold transition-all group cursor-pointer backdrop-blur-sm shadow-md"
+                    className="inline-flex items-center gap-2 px-5 sm:px-7 py-2 sm:py-2.5 lg:py-3 rounded-full border border-white/35 hover:border-white text-[#FAF8F5] hover:bg-[#FAF8F5] hover:text-[#0B3828] font-mono text-[10.5px] sm:text-xs uppercase tracking-wider font-semibold transition-all group cursor-pointer backdrop-blur-sm shadow-md"
                   >
                     <span>{idx === journeyChapters.length - 1 ? 'Explore Recognition ↓' : 'Next Chapter'}</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:translate-x-1 transition-transform" />
                   </button>
 
                   {idx > 0 && (
                     <button
                       type="button"
                       onClick={handlePrevClick}
-                      className="px-4 py-2.5 rounded-full text-white/60 hover:text-white font-mono text-xs uppercase tracking-wider font-medium transition-colors cursor-pointer"
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-white/60 hover:text-white font-mono text-[10.5px] sm:text-xs uppercase tracking-wider font-medium transition-colors cursor-pointer"
                     >
                       ← Previous
                     </button>
@@ -932,10 +790,10 @@ export default function AboutPage({ onNavigate }) {
         </div>
 
         {/* Bottom Minimalist Folio Stamp with Nav Controls */}
-        <div className="relative z-10 max-w-[1400px] w-full mx-auto flex items-center justify-between pt-2.5 sm:pt-3 border-t border-white/15 font-mono text-[11px] text-[#FAF8F5]/50 uppercase tracking-widest">
-          <span>Dr. Ravi Shankar Rai · The Making of a Vision</span>
-          <div className="flex items-center gap-4 text-[#FAF8F5]/70">
-            <span className="hidden sm:inline">Use Scroll / Arrows To Step</span>
+        <div className="relative z-10 max-w-[1400px] w-full mx-auto flex items-center justify-between gap-4 pt-2 sm:pt-3 border-t border-white/15 font-mono text-[10px] sm:text-[11px] text-[#FAF8F5]/50 uppercase tracking-widest">
+          <span className="truncate">Dr. Ravi Shankar Rai · The Making of a Vision</span>
+          <div className="flex items-center gap-3 sm:gap-4 text-[#FAF8F5]/70 shrink-0">
+            <span className="hidden lg:inline text-[#FAF8F5]/50">Use Scroll / Arrows To Step</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"

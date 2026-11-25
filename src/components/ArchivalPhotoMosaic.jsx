@@ -1,5 +1,15 @@
-import React, { useState } from 'react';
-import { ArrowRight, X, ZoomIn, Calendar, MapPin, Award, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  ArrowRight,
+  X,
+  ZoomIn,
+  Calendar,
+  MapPin,
+  Award,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 
 // Authentic historical and archival photographs of Dr. Ravi Shankar Rai & Savitri Group
 import founderPortrait from '../assets/CEO-MD-SavitriTelecomServices.jpg.webp';
@@ -211,8 +221,75 @@ const mosaicColumns = [
   ],
 ];
 
+// Flattened list of all photos for linear sequential browsing
+const allPhotos = mosaicColumns.flat();
+
 export default function ArchivalPhotoMosaic({ onNavigate }) {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const touchStartXRef = useRef(0);
+  const touchStartYRef = useRef(0);
+
+  const currentIndex = selectedPhoto
+    ? allPhotos.findIndex((p) => p.id === selectedPhoto.id)
+    : 0;
+
+  const handleNextPhoto = (e) => {
+    if (e) e.stopPropagation();
+    if (!selectedPhoto) return;
+    const currentIdx = allPhotos.findIndex((p) => p.id === selectedPhoto.id);
+    const nextIdx = (currentIdx + 1) % allPhotos.length;
+    setSelectedPhoto(allPhotos[nextIdx]);
+  };
+
+  const handlePrevPhoto = (e) => {
+    if (e) e.stopPropagation();
+    if (!selectedPhoto) return;
+    const currentIdx = allPhotos.findIndex((p) => p.id === selectedPhoto.id);
+    const prevIdx = (currentIdx - 1 + allPhotos.length) % allPhotos.length;
+    setSelectedPhoto(allPhotos[prevIdx]);
+  };
+
+  // Keyboard navigation when modal is open
+  useEffect(() => {
+    if (!selectedPhoto) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleNextPhoto();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handlePrevPhoto();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setSelectedPhoto(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPhoto]);
+
+  // Touch swipe support on mobile/tablet
+  const handleTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!e.changedTouches || !e.changedTouches[0]) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
+      if (deltaX < 0) {
+        handleNextPhoto();
+      } else {
+        handlePrevPhoto();
+      }
+    }
+  };
 
   const handleExploreAll = (e) => {
     e.preventDefault();
@@ -330,41 +407,75 @@ export default function ArchivalPhotoMosaic({ onNavigate }) {
 
       {/* =================================================================== */}
       {/* LIGHTBOX MODAL FOR FULL-SIZE ARCHIVE VIEW                           */}
+      {/* Interactive: Next/Prev buttons, Keyboard Arrows, Touch Swipe, Live # */}
       {/* =================================================================== */}
       {selectedPhoto && (
         <div
           role="dialog"
           aria-modal="true"
           onClick={() => setSelectedPhoto(null)}
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 lg:p-10 animate-fade-in"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 lg:p-10 animate-fade-in"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-4xl w-full bg-[#FAF7F0] text-[#003D32] rounded-3xl overflow-hidden shadow-2xl border border-white/20 flex flex-col md:flex-row max-h-[90vh]"
+            className="relative max-w-4xl w-full bg-[#FAF7F0] text-[#003D32] rounded-3xl overflow-hidden shadow-2xl border border-white/20 flex flex-col md:flex-row max-h-[92vh]"
           >
-            {/* Close Button */}
+            {/* Top Close Button */}
             <button
               type="button"
               onClick={() => setSelectedPhoto(null)}
-              className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/60 hover:bg-black text-white transition-colors cursor-pointer"
+              className="absolute top-4 right-4 z-30 p-2 rounded-full bg-black/60 hover:bg-black text-white transition-colors cursor-pointer shadow-md"
               aria-label="Close dialog"
+              title="Close (Escape)"
             >
               <X className="w-5 h-5" />
             </button>
 
-            {/* Photo View */}
-            <div className="md:w-3/5 bg-black flex items-center justify-center overflow-hidden max-h-[50vh] md:max-h-none">
+            {/* Photo View Stage with Interactive Floating Chevrons */}
+            <div
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              className="relative md:w-3/5 bg-black flex items-center justify-center overflow-hidden max-h-[48vh] md:max-h-none select-none group/photo"
+            >
               <img
+                key={selectedPhoto.id}
                 src={selectedPhoto.src}
                 alt={selectedPhoto.alt}
-                className="w-full h-full object-contain max-h-[80vh]"
+                className="w-full h-full object-contain max-h-[80vh] transition-all duration-300"
               />
+
+              {/* Floating Previous Photo Button on Image */}
+              <button
+                type="button"
+                onClick={handlePrevPhoto}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/60 hover:bg-[#003D32] border border-white/25 text-white backdrop-blur-md transition-all duration-200 cursor-pointer hover:scale-110 shadow-xl group"
+                aria-label="Previous photo"
+                title="Previous Photo (Left Arrow)"
+              >
+                <ChevronLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+              </button>
+
+              {/* Floating Next Photo Button on Image */}
+              <button
+                type="button"
+                onClick={handleNextPhoto}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/60 hover:bg-[#003D32] border border-white/25 text-white backdrop-blur-md transition-all duration-200 cursor-pointer hover:scale-110 shadow-xl group"
+                aria-label="Next photo"
+                title="Next Photo (Right Arrow)"
+              >
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+
+              {/* Live Photo Index Badge on Image */}
+              <div className="absolute bottom-3 left-3 z-10 px-3 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/20 text-[11px] font-mono text-white/90 font-semibold shadow-md">
+                {String(currentIndex + 1).padStart(2, '0')} / {String(allPhotos.length).padStart(2, '0')}
+              </div>
             </div>
 
-            {/* Contextual Description */}
-            <div className="md:w-2/5 p-6 sm:p-8 flex flex-col justify-between overflow-y-auto">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
+            {/* Contextual Description & Controls */}
+            <div className="md:w-2/5 p-5 sm:p-7 lg:p-8 flex flex-col justify-between overflow-y-auto">
+              <div className="space-y-3.5 sm:space-y-4">
+                <div className="flex items-center justify-between pr-10">
                   <span className="font-mono text-[10px] uppercase tracking-widest px-3 py-1 rounded-full bg-[#003D32]/10 text-[#003D32] font-bold">
                     {selectedPhoto.category}
                   </span>
@@ -373,22 +484,50 @@ export default function ArchivalPhotoMosaic({ onNavigate }) {
                   </span>
                 </div>
 
-                <h3 className="font-serif font-bold text-2xl text-[#003D32] leading-snug">
+                <h3 className="font-serif font-bold text-xl sm:text-2xl text-[#003D32] leading-snug">
                   {selectedPhoto.title}
                 </h3>
 
-                <p className="font-sans text-sm text-[#003D32]/80 leading-relaxed font-light">
+                <p className="font-sans text-xs sm:text-sm text-[#003D32]/80 leading-relaxed font-light">
                   {selectedPhoto.caption}
                 </p>
 
-                <div className="p-3.5 rounded-xl bg-white border border-[#C6A36A]/30 text-xs font-mono text-[#003D32]/70 space-y-1">
+                <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-[#C6A36A]/30 text-xs font-mono text-[#003D32]/70 space-y-1 shadow-xs">
                   <div className="font-semibold text-[#003D32]">Archival Reference:</div>
                   <div>Savitri Corporate Archive · Record {selectedPhoto.id}</div>
                 </div>
+
+                {/* Primary Next / Previous Navigation Suite */}
+                <div className="pt-2 flex items-center justify-between gap-2.5 sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={handlePrevPhoto}
+                    className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-full bg-white hover:bg-[#FAF7F0] border border-[#003D32]/25 text-[#003D32] text-xs font-mono font-semibold transition-all cursor-pointer shadow-xs hover:shadow-sm"
+                    title="Previous Photo (Left Arrow)"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Previous</span>
+                  </button>
+
+                  <span className="font-mono text-xs font-bold text-[#C6A36A] shrink-0">
+                    {String(currentIndex + 1).padStart(2, '0')} / {String(allPhotos.length).padStart(2, '0')}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={handleNextPhoto}
+                    className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full bg-[#003D32] hover:bg-[#002B23] text-[#FAF7F0] text-xs font-mono font-semibold transition-all cursor-pointer shadow-sm hover:shadow-md"
+                    title="Next Photo (Right Arrow)"
+                  >
+                    <span>Next Photo</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
-              <div className="pt-6 border-t border-[#C6A36A]/20 flex items-center justify-between">
-                <span className="font-mono text-[11px] text-[#003D32]/50 uppercase tracking-wider">
+              {/* Bottom Colophon and Awards Link */}
+              <div className="pt-4 sm:pt-5 border-t border-[#C6A36A]/20 flex items-center justify-between mt-4">
+                <span className="font-mono text-[10.5px] text-[#003D32]/50 uppercase tracking-wider truncate max-w-[140px] sm:max-w-none">
                   Dr. Ravi Shankar Rai
                 </span>
                 <button
@@ -397,7 +536,7 @@ export default function ArchivalPhotoMosaic({ onNavigate }) {
                     setSelectedPhoto(null);
                     handleExploreAll({ preventDefault: () => {} });
                   }}
-                  className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#003D32] hover:text-[#C6A36A] transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#003D32] hover:text-[#C6A36A] transition-colors cursor-pointer shrink-0"
                 >
                   <span>Explore Awards</span>
                   <ArrowRight className="w-3.5 h-3.5" />
